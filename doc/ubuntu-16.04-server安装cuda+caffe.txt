@@ -1,0 +1,121 @@
+ubuntu-16.04-server安装cuda+caffe
+实验环境
+ubuntu-16.04.1-server-amd64.iso
+
+1.安装ubuntu-16.04.1-server-amd64
+
+2.切换国内源
+cat > /etc/apt/sources.list <<EOF
+# deb cdrom:[Ubuntu 16.04 LTS _Xenial Xerus_ - Release amd64 (20160420.1)]/ xenial main restricted
+deb-src http://archive.ubuntu.com/ubuntu xenial main restricted #Added by software-properties
+deb http://mirrors.aliyun.com/ubuntu/ xenial main restricted
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial main restricted multiverse universe #Added by software-properties
+deb http://mirrors.aliyun.com/ubuntu/ xenial-updates main restricted
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial-updates main restricted multiverse universe #Added by software-properties
+deb http://mirrors.aliyun.com/ubuntu/ xenial universe
+deb http://mirrors.aliyun.com/ubuntu/ xenial-updates universe
+deb http://mirrors.aliyun.com/ubuntu/ xenial multiverse
+deb http://mirrors.aliyun.com/ubuntu/ xenial-updates multiverse
+deb http://mirrors.aliyun.com/ubuntu/ xenial-backports main restricted universe multiverse
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial-backports main restricted universe multiverse #Added by software-properties
+deb http://archive.canonical.com/ubuntu xenial partner
+deb-src http://archive.canonical.com/ubuntu xenial partner
+deb http://mirrors.aliyun.com/ubuntu/ xenial-security main restricted
+deb-src http://mirrors.aliyun.com/ubuntu/ xenial-security main restricted multiverse universe #Added by software-properties
+deb http://mirrors.aliyun.com/ubuntu/ xenial-security universe
+deb http://mirrors.aliyun.com/ubuntu/ xenial-security multiverse
+EOF
+
+apt update && apt upgrade -y
+
+3.安装显卡驱动
+add-apt-repository ppa:graphics-drivers/ppa
+apt update
+apt install nvidia-381 nvidia-381-dev libcuda1-381 nvidia-opencl-icd-381 -y
+reboot  
+
+4.安装cuda8.0
+bash  cuda_8.0.44_linux.run
+
+5.验证
+nvidia-smi
+nvcc
+
+6. 安装opencv
+unzip opencv-3.0.0.zip
+cd opencv-3.0.0
+cmake
+make install
+
+7.安装caffe
+7.1安装必要的库
+apt install -y libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libboost-all-dev libhdf5-serial-dev protobuf-compiler gfortran libjpeg62 libfreeimage-dev libatlas-base-dev git python-dev python-pip libgoogle-glog-dev libbz2-dev libxml2-dev libxslt-dev libffi-dev libssl-dev libgflags-dev liblmdb-dev python-yaml
+
+easy_install pillow
+
+6.2 下载caffe
+git clone https://github.com/BVLC/caffe.git
+
+6.3 安装pip依赖
+cd caffe    
+pip install -r python/requirements.txt
+
+6.4 增加符号链接：
+sudo ln -s /usr/include/python2.7/ /usr/local/include/python2.7    
+sudo ln -s /usr/local/lib/python2.7/dist-packages/numpy/core/include/numpy/ /usr/local/include/python2.7/numpy
+
+6.5 修改Makefile.config配置文件
+在~/caffe目录下：
+A、先将Makefile.config.example复制为Makefile.config
+cp Makefile.config.example Makefile.config
+
+B、去掉 # CPU_ONLY: = 1 的注释
+vim Makefile.config
+CPU_ONLY: = 1
+
+C、修改PYTHON_INCLUDE路径
+把
+/usr/lib/python2.7/dist-packages/numpy/core/include    
+改为：
+/usr/local/lib/python2.7/dist-packages/numpy/core/include  
+
+D、如果没有 hdf5,安装一下，如果有了，就跳过安装
+安装hdf5
+sudo apt-get install libhdf5-dev
+添加hdf5库文件
+INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/hdf5/serial/  
+LIBRARY_DIRS := $(PYTHON_LIB) /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu/hdf5/serial/
+
+6.6 编译caffe
+在caffe目录下面：
+make pycaffe    
+make all    
+make test
+编译通过则说明安装正确，也可以用下面的例子来进行验证。
+
+6.7 使用MNIST手写数据集测试，训练数据模型
+A、获取数据库
+cd ~/caffe (or whatever you called your Caffe directory)    
+./data/mnist/get_mnist.sh    
+./examples/mnist/create_mnist.sh   
+
+B、编辑examples/mnist文件夹下的lenet_solver.prototxt文件，将solver_mode模式从GPU改为CPU。
+
+C、训练模型
+./examples/mnist/train_lenet.sh  
+
+6.8 验证python与caffe的连接
+判断python 与caffe是否相连其实很简单，只要在终端上输入   python， 然后输入  import caffe，便可以知道是否相连接成功。
+
+如果成功，则会像上图所示无任何提示信息，否则会提示找不到caffe。连接方法如下：
+gedit ~/.bashrc  #打开  
+export PYTHONPATH=$HOME/caffe/python:$PYTHONPATH   #配置文件最后写入该路径，本人是export PYTHONPATH=/home/dell/caffe/python:$PYTHONPATH  
+sorce ~/.bashrc   #生效
+执行完之后，在python中重新输入  import caffe
+
+
+
+Magic-file-extensions==0.2
+
+pip包
+apt -y install adium-theme-ubuntu hamster-indicator unity-lens-photos apturl catfish lightdm-gtk-greeter-settings menulibre mugshot onboard sessioninstaller unity-scope-calculator unity-scope-chromiumbookmarks unity-scope-colourlovers unity-scope-devhelp unity-scope-firefoxbookmarks unity-scope-gdrive unity-scope-manpages unity-scope-openclipart unity-scope-texdoc unity-scope-tomboy unity-scope-virtualbox unity-scope-yelp unity-scope-zotero usb-creator-gtk xdiagnose

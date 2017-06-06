@@ -1,0 +1,105 @@
+一、环境准备
+Linux: ubuntu-16.04-desktop-amd64
+CUDA:cuda-repo-ubuntu1504-7-5-local_7.5-18_amd64.deb
+
+二、安装步骤
+1.安装必要的环境
+apt update
+apt upgrade -y
+apt install build-essential
+
+2.安装CUDA
+dpkg -i cuda-repo-ubuntu1504-7-5-local_7.5-18_amd64.deb
+该部分的安装可以参考官网上的教材。http://doc.nvidia.com/cuda/index/html#axzz45RVcqwa8
+
+3.安装必要的库
+A:
+sudo apt-get install -y libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libboost-all-dev libhdf5-serial-dev protobuf-compiler gfortran libjpeg62 libfreeimage-dev libatlas-base-dev git python-dev python-pip libgoogle-glog-dev libbz2-dev libxml2-dev libxslt-dev libffi-dev libssl-dev libgflags-dev liblmdb-dev python-yaml
+
+B:
+sudo easy_install pillow
+
+4.下载caffe 
+cd ~    
+git clone https://github.com/BVLC/caffe.git
+
+5.安装python相关的依赖库
+cd caffe    
+cat python/requirements.txt | xargs -L 1 sudo pip install
+
+6.增加符号链接：
+sudo ln -s /usr/include/python2.7/ /usr/local/include/python2.7    
+sudo ln -s /usr/local/lib/python2.7/dist-packages/numpy/core/include/numpy/ /usr/local/include/python2.7/numpy
+
+7.修改Makefile.config配置文件
+在~/caffe目录下：
+A、先将Makefile.config.example复制为Makefile.config
+cp Makefile.config.example Makefile.config
+
+B、去掉 # CPU_ONLY: = 1 的注释
+vim Makefile.config
+CPU_ONLY: = 1
+
+C、修改PYTHON_INCLUDE路径
+把
+/usr/lib/python2.7/dist-packages/numpy/core/include    
+改为：
+/usr/local/lib/python2.7/dist-packages/numpy/core/include  
+
+D、如果没有 hdf5,安装一下，如果有了，就跳过安装
+安装hdf5
+sudo apt-get install libhdf5-dev
+添加hdf5库文件
+INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/hdf5/serial/  
+LIBRARY_DIRS := $(PYTHON_LIB) /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu/hdf5/serial/
+如图：
+
+8.编译caffe
+在caffe目录下面：
+make pycaffe    
+make all    
+make test
+编译通过则说明安装正确，也可以用下面的例子来进行验证。
+
+9.使用MNIST手写数据集测试，训练数据模型
+A、获取数据库
+cd ~/caffe (or whatever you called your Caffe directory)    
+./data/mnist/get_mnist.sh    
+./examples/mnist/create_mnist.sh   
+
+B、编辑examples/mnist文件夹下的lenet_solver.prototxt文件，将solver_mode模式从GPU改为CPU。
+
+C、训练模型
+./examples/mnist/train_lenet.sh  
+
+10、该步很重要，连接python与caffe
+判断python 与caffe是否相连其实很简单，只要在终端上输入   python， 然后输入  import caffe，便可以知道是否相连接成功。
+
+如果成功，则会像上图所示无任何提示信息，否则会提示找不到caffe。连接方法如下：
+gedit ~/.bashrc  #打开  
+export PYTHONPATH=$HOME/caffe/python:$PYTHONPATH   #配置文件最后写入该路径，本人是export PYTHONPATH=/home/dell/caffe/python:$PYTHONPATH  
+sorce ~/.bashrc   #生效
+执行完之后，在python中重新输入  import caffe。
+ 
+三、编译常出现的错误：
+（1）在make pycaffe后常出现：提示错误：src/caffe/net.cpp:8:18: fatal error: hdf5.h: No such file or directory
+网上说给的解决方法：https://github.com/NVIDIA/DIGITS/issues/156
+cd /usr/lib/x86_64-Linux-gnu
+sudo ln -s libhdf5_serial.so.10.1.0 libhdf5_serial.so
+sudo ln -s libhdf5_serial_hl.so.10.0.2 libhdf5_serial_hl.so
+修改Makefile.config
+INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/hdf5/serial/
+LIBRARY_DIRS := $(PYTHON_LIB) /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu/hdf5/serial/
+即可
+我的解决方法：
+先安装一下hdf5，以防未安装。执行命令 sudo apt-get install libhdf5-dev
+我看了我的/usr/lib/x86_64-linux-gnu目录下并没有libhdf5_serial.so.10.1.0与libhdf5_serial_hl.so.10.0.2，所以我只根据上面提示修改Makefile.config
+INCLUDE_DIRS := $(PYTHON_INCLUDE) /usr/local/include /usr/include/hdf5/serial/
+LIBRARY_DIRS := $(PYTHON_LIB) /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu/hdf5/serial/
+
+（2）提示错误：directoryg++: internal compiler error: Killed (program cc1plus) 
+Please submit a full bug report,
+主要原因大体上是因为内存不足
+gedit ~/.bashrc    #打开bashrc  
+export PYTHONPATH=$HOME/caffe/python:$PYTHONPATH   #在配置文件最后写入，本人是export PYTHONPATH=/home/dell/caffe/python:$PYTHONPATH  
+source ~/.bashrc    #生效

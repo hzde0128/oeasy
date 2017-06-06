@@ -1,0 +1,18 @@
+多目标检测 
+# 安装mysql数据库
+apt install libevent-core-2.0-5 libhtml-template-perl mysql-server-5.7 mysql-server-core-5.7
+
+# 启动mysql
+systemctl enable mysql
+systemctl start mysql
+
+# 修改密码
+mysqladmin -uroot password oeasy
+# 创建MyTrack数据库
+mysql -poeasy -e "CREATE DATABASE MyTrack DEFAULT CHARACTER SET utf8"
+# 导入表结构
+mysql -poeasy MyTrack < caffe/MyTrack.sql
+
+# 编译caffe
+
+# 启动服务

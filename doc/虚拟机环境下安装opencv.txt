@@ -1,0 +1,20 @@
+虚拟机环境下安装opencv
+
+实验环境
+操作系统：Ubuntu Server 16.04.2
+
+用到的工具
+Virtualbox-5.1.22
+ubuntu-16.04.2-server-amd64.iso
+Xshell5
+opencv-3.2.0.zip
+
+apt -y install build-essential wget openssh-server cmake pkg-config
+wget https://github.com/opencv/opencv/archive/3.2.0.zip
+unzip 3.2.0.zip
+cd opencv-3.2.0
+mkdir build
+cd build
+cmake ..
+make -j 4
+make install
